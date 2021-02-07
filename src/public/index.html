@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+  <script src="js/CSS3DRenderer.js"></script>
+  <script src="js/threex.htmlmixerhelpers.js"></script>
+
+  <script src="js/threex.htmlmixer.js"></script>
+  <title>Document</title>
+</head>
+<style>
+  .a-modal {
+    display: none !important;
+  }
+</style>
+
+
+<body style="margin: 0px">
+  <!--<h1 style="position: fixed; z-index: 100;">test</h1> -->
+
+  <a-scene inspector="url: http://workstation:1338/public/src/js/aframe-inspector.min.js">
+    <a-entity 
+      id="cube"
+      geometry="primitive: box; width: 1; height: 1; depth: 1"
+      position="0 -1 1"
+      material="color: #0000FF; opacity: 0.5;"
+      rotation="0 0 0"
+      visible="false"
+    >
+    </a-entity> 
+    <a-entity id="camera" 
+      camera 
+      look-controls="pointerLockEnabled:true"  
+    ></a-entity>
+    <a-sky color="#ECECEC"></a-sky>
+  </a-scene>
+
+  <script type="module">
+
+
+    let sceneEl = document.querySelector('a-scene');
+    let cameraEl = document.querySelector('a-entity[camera]');
+    let planeBoardScreen = document.querySelector('#plane-board');;
+    
+
+    sceneEl.addEventListener('loaded', function () {
+      const renderer = sceneEl.renderer;
+      renderer.autoClear = false;
+      renderer.setSize( window.innerWidth, window.innerHeight );
+
+      console.log({renderer});
+      console.log({sceneEl});
+      console.log({cameraEl});
+
+
+      const threeCam = sceneEl.camera;
+      /*threeCam.fov = 90;
+      threeCam.aspect = window.innerWidth / window.innerHeight,
+      threeCam.near = 0.01;
+      threeCam.far = 1000;*/
+
+      threeCam.position.z = 3;
+
+
+      const mixerContext = new THREEx.HtmlMixer.Context(renderer, sceneEl.object3D, threeCam);
+
+      // handle window resize for mixerContext
+      window.addEventListener('resize', function(){
+        mixerContext.rendererCss.setSize( window.innerWidth, window.innerHeight )
+      }, false)
+      
+      // set up rendererCss
+      const rendererCss		= mixerContext.rendererCss;
+      rendererCss.setSize( window.innerWidth, window.innerHeight );
+
+      // set up rendererWebgl;
+      const rendererWebgl	= mixerContext.rendererWebgl;
+      const css3dElement		= rendererCss.domElement;
+      css3dElement.style.position	= 'absolute';
+      css3dElement.style.top		= '0px';
+      css3dElement.style.left		= '0px';
+      css3dElement.style.width	= '100%';
+      css3dElement.style.height	= '100%';
+      document.body.appendChild( css3dElement );
+	
+      const webglCanvas			= rendererWebgl.domElement;
+      webglCanvas.style.position	= 'absolute';
+      webglCanvas.style.top		= '0px';
+      webglCanvas.style.left		= '0px';
+      webglCanvas.style.width		= '100%';
+      webglCanvas.style.height	= '100%';
+      webglCanvas.style.pointerEvents	= 'none';
+      css3dElement.appendChild( webglCanvas );
+
+  
+      const url = 'https://www.tripito.eu';
+      const domElement = THREEx.HtmlMixerHelpers.createIframeDomElement(url);
+      domElement.id = "iframe";
+
+      const mixerPlane = new THREEx.HtmlMixer.Plane(mixerContext, domElement, {
+        elementW : window.innerWidth, //768,
+        planeW : 1, // 1,
+        planeH : 3 / 4, //3 / 4
+      });
+
+      mixerPlane.object3d.scale.multiplyScalar(3)
+
+
+      sceneEl.object3D.add(mixerPlane.object3d);
+
+      function onResize() {
+        // notify the renderer of the size change
+        renderer.setSize( window.innerWidth, window.innerHeight )
+        // update the camera
+        threeCam.aspect	= window.innerWidth / window.innerHeight
+        threeCam.updateProjectionMatrix()		
+      }
+	
+      window.addEventListener('resize', onResize, false)
+
+
+
+
+      let onRenderFcts = [];
+        onRenderFcts.push(function (delta, now) {
+        mixerPlane.object3d.rotation.y += Math.PI * 2 * delta * 0.1;
+      })
+
+
+
+      onRenderFcts.push(function (delta, now) {
+        mixerContext.update(delta, now)
+      })
+
+      onRenderFcts.push(function (delta, now) {
+        renderer.render( sceneEl.object3D, threeCam );	
+      })
+
+
+      var lastTimeMsec = null
+      requestAnimationFrame(function animate(nowMsec) {
+        requestAnimationFrame(animate);
+
+        lastTimeMsec = lastTimeMsec || nowMsec - 1000 / 60
+        var deltaMsec = Math.min(200, nowMsec - lastTimeMsec)
+        lastTimeMsec = nowMsec
+
+        // call each update function
+        onRenderFcts.forEach(function (onRenderFct) {
+          onRenderFct(deltaMsec / 1000, nowMsec / 1000)
+        })
+      })
+    });
+  </script>
+</body>
+
+</html>
